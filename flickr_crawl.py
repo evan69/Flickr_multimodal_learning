@@ -6,6 +6,7 @@ import sys
 import socket
 import inspect
 import nltk
+import random
 
 api_key = u'b28ec210280050d5d1760ff978e0404a'
 api_secret = u'59131beaddb61785'
@@ -59,18 +60,22 @@ def getTagsByPhoto(photo_id):
         print 'error'
         print Exception,':',ex
         
-def run(max_depth):
+def run(max_depth, rate):
     global tag_set
     cnt = 0
     while(cnt < max_depth):
         new_tag_set = set()
         for tag in tag_set:
             photos = getPhotosByTag(tag)
+            rand_list = random.sample(range(0, len(photos)), int(rate * len(photos) + 1))
+            photos = [photos[i] for i in rand_list]
             try:
                 for photo in photos:
                     myurl = photo.get('url_z')
                     photo_id = photo.get('id')
                     if photo_id in photo_set:
+                        continue
+                    if myurl == None or photo_id == None:
                         continue
                     photo_set.add(photo_id)
                     print myurl,photo_id
@@ -101,7 +106,7 @@ def main():
     #print sys.getdefaultencoding()
     sys.setdefaultencoding('utf-8')
     #print sys.getdefaultencoding()
-    run(1)
+    run(1,0.5)
     #getPhotosByTag("black-and-white")
     #getTagsByPhoto('34716887764')
 
