@@ -47,18 +47,14 @@ def getPhotosByTag(tag_name):
     '''
         
 def getTagsByPhoto(photo_id):
-    #res = flickr.photos.getInfo(api_key=api_key,photo_id=photo_id)
     try:
         res = flickr.tags.getListPhoto(api_key=api_key,photo_id=photo_id)
         tags = res.get('photo').get('tags').get('tag')
-        return tags
-        #print tags
-        for tag in tags:
-            print tag.get('id'),tag.get('raw').encode('utf8')
-        #print res
     except Exception,ex:
         print 'error'
         print Exception,':',ex
+        
+    return tags
         
 def run(max_depth, rate):
     global tag_set
