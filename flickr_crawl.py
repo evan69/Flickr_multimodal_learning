@@ -7,6 +7,7 @@ import socket
 import inspect
 import nltk
 import random
+import time
 
 api_key = u'b28ec210280050d5d1760ff978e0404a'
 api_secret = u'59131beaddb61785'
@@ -19,6 +20,13 @@ tag_set = set(tag_set)
 photo_set = set()
 # initial photos visited
 
+file_out = open('tags.txt','w')
+
+def writeToFile(tag):
+    global file_out
+    file_out.write(tag)
+    file_out.write('\n')
+
 def judgeAdj(tag):
 # judge whether the word is adj
     if tag.find(' ') != -1:
@@ -28,26 +36,14 @@ def judgeAdj(tag):
     #print res
     return res[0][1] == 'JJ'
 
-def getPhotosByTag(tag_name):
+def getPhotosByTag(tag_name, photo_num_per_tag):
     try:
-        photos = flickr.photos.search(extras='url_z', tags = tag_name)
+        photos = flickr.photos.search(extras='url_z', tags = tag_name, per_page = photo_num_per_tag)
         photos = photos['photos']['photo']
     except Exception:
         print 'error in getPhotosByTag'
         
     return photos
-    '''        
-    try:
-        for photo in photos:
-            myurl = photo.get('url_z')
-            photo_id = photo.get('id')
-            if myurl is not None:
-                print myurl,photo_id
-
-    except Exception,ex:
-        print 'error'
-        print Exception,':',ex
-    '''
         
 def getTagsByPhoto(photo_id):
     try:
@@ -59,19 +55,21 @@ def getTagsByPhoto(photo_id):
         
     return tags
         
-def run(max_depth, rate):
-    global tag_set
+def run(max_depth, photo_num_per_tag):
+    global tag_set, file_out
+    map(writeToFile, tag_set)
     ret_set = set()
     ret_set.update(tag_set)
     cnt = 0
+    last_len = 0
     while(cnt < max_depth):
         new_tag_set = set()
         for tag in tag_set:
             try:
-                photos = getPhotosByTag(tag)
+                photos = getPhotosByTag(tag, photo_num_per_tag)
                 # get photos of a tag
-                rand_list = random.sample(range(0, len(photos)), int(rate * len(photos) + 1))
-                photos = [photos[i] for i in rand_list]
+                # rand_list = random.sample(range(0, len(photos)), int(rate * len(photos) + 1))
+                # photos = [photos[i] for i in rand_list]
                 # choose photos randomly at given rate
                 for photo in photos:
                     try:
@@ -85,9 +83,12 @@ def run(max_depth, rate):
                             continue
                         photo_set.add(photo_id)
                         # add photo id to set
-                        print myurl,photo_id
+                        # print myurl,photo_id
                         tags_of_photo = getTagsByPhoto(photo_id)
                         # get all tags of a photo
+
+                        tmp_tag_set = set()
+
                         for tag in tags_of_photo: # traverse all tags of a photo
                             try:
                                 tag_name = tag.get('raw')
@@ -98,30 +99,43 @@ def run(max_depth, rate):
                                 # judge if is adj
                                 if is_adj:
                                     tag_name = tag_name.lower()
-                                    new_tag_set.add(tag_name)
+                                    if tag_name in ret_set:
+                                        continue
+                                    # ignore visited tags
+                                    tmp_tag_set.add(tag_name)
                                 # transfer to lower format and add to set
-                                print 'add tag:',tag_name,is_adj
+                                # print 'add tag:',tag_name,is_adj
                             except Exception,ex:
                                 print 'error when process a tag of a photo'
                                 print Exception,':',ex
 
+                        map(writeToFile, tmp_tag_set)
+                        # print tmp tag in this scan
+                        file_out.close()
+                        file_out = open('tags.txt','a')
+                        new_tag_set.update(tmp_tag_set)
+                        # add to next loop tag scan set
+                        ret_set.update(tmp_tag_set)
+                        # add to total tag set
+
                     except Exception,ex:
                         print 'error when process a photo'
                         print Exception,':',ex
+
+                    cur_len = len(ret_set)
+                    if cur_len > last_len:
+                        print "current tags num :", cur_len
+                        last_len = cur_len
 
             except Exception,ex:
                 print 'error when process a tag in tag_set'
                 print Exception,':',ex
         
         tag_set = new_tag_set
-        # tags to be visited in the next loop
-        ret_set.update(tag_set)
-        # add them to return tag set
-        print 'end a round of tag scanning'
-        print 'tag for next loop:'
-        print tag_set
+        print 'End loop ' + str(cnt) + ' of tag scanning'
         cnt += 1
     print 'total tag num:',len(ret_set)
+    file_out.close()
     return ret_set
         
 def main():
@@ -129,7 +143,10 @@ def main():
     #print sys.getdefaultencoding()
     sys.setdefaultencoding('utf-8')
     #print sys.getdefaultencoding()
-    print run(1,0.1)
+    start = time.clock()
+    print run(100,100)
+    elapsed = (time.clock() - start)
+    print "Time used:",elapsed
     #getPhotosByTag("black-and-white")
     #getTagsByPhoto('34716887764')
 
