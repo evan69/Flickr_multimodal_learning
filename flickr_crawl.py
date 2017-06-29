@@ -22,6 +22,14 @@ photo_set = set()
 
 file_out = open('tags.txt','w')
 
+def readInInitSet():
+    global tag_set
+    tag_set = set()
+    init_tag = open('originTags.txt','r')
+    lines = init_tag.readlines()
+    for line in lines:
+        tag_set.add(line)
+
 def writeToFile(tag):
     global file_out
     file_out.write(tag)
@@ -57,7 +65,6 @@ def getTagsByPhoto(photo_id):
         
 def run(max_depth, photo_num_per_tag):
     global tag_set, file_out
-    map(writeToFile, tag_set)
     ret_set = set()
     ret_set.update(tag_set)
     cnt = 0
@@ -139,6 +146,7 @@ def run(max_depth, photo_num_per_tag):
     return ret_set
         
 def main():
+    readInInitSet()
     reload(sys)
     #print sys.getdefaultencoding()
     sys.setdefaultencoding('utf-8')
