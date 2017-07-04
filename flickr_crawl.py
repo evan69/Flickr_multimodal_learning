@@ -70,6 +70,10 @@ def run(max_depth, photo_num_per_tag):
     cnt = 0
     last_len = 0
     while(cnt < max_depth):
+        print "ret set size",len(ret_set)
+        print "photo set size:",len(photo_set)
+        print "num of layers visited:",cnt
+
         new_tag_set = set()
         for tag in tag_set:
             try:
@@ -90,7 +94,7 @@ def run(max_depth, photo_num_per_tag):
                             continue
                         photo_set.add(photo_id)
                         # add photo id to set
-                        # print myurl,photo_id
+                        print myurl,photo_id
                         tags_of_photo = getTagsByPhoto(photo_id)
                         # get all tags of a photo
 
@@ -151,8 +155,9 @@ def main():
     #print sys.getdefaultencoding()
     sys.setdefaultencoding('utf-8')
     #print sys.getdefaultencoding()
+    nltk.data.path.append('N:\\myh\\nltk_data')
     start = time.clock()
-    print run(100,100)
+    run(10000,50)
     elapsed = (time.clock() - start)
     print "Time used:",elapsed
     #getPhotosByTag("black-and-white")
