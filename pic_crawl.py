@@ -146,7 +146,6 @@ def unsupervisedDownload(id):
                     continue
                 # print os.listdir(dir)
                 if str(ph.get('id') + '.jpg') in os.listdir(dir):
-                    print 'continue'
                     continue
                 downLoadPicFromURL(dir + ph.get('id') + '.jpg',ph.get('url_z'))
 
