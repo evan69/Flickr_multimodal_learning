@@ -31,7 +31,7 @@ LO_DATE = HI_DATE - datetime.timedelta(days = 30 * THREAD_NUM)
 print LO_DATE
 
 def readInInitSet():
-    global tag_set
+    global tag_set,RATE
     tag_set = []
     total_photo = 0
     init_tag = open('filtered_tags.txt','r')
@@ -40,7 +40,7 @@ def readInInitSet():
         line = line.split(' ')
         total_photo += int(line[1])
         tag_set.append((line[0],int(line[1])))
-    RATE = 1.0 * total_photo / TOTAL
+    RATE = 1.0 * TOTAL / total_photo
     print 'rate:',RATE
         
 
@@ -109,12 +109,17 @@ def crawl(tag_set,name):
             # print ex
         
         print tag + ' ' + str(calPhotoNum(tag_entry[1])) + ' ' + str(len(os.listdir(dir)))
+        if calPhotoNum(tag_entry[1]) < len(os.listdir(dir)):
+            print 'continue'
+            continue
         ret = getPhotosByTag(tag, calPhotoNum(tag_entry[1]) - len(os.listdir(dir)))
         #print ret
         for photo_list in ret:
             for photo in photo_list:
                 try:
                     myurl = photo.get('url_z')
+                    if myurl == None:
+                        continue
                     myid = photo.get('id')
                     # print myurl + ' ' + myid + ' ' + name
                     # print getTagsByPhoto(myid)
@@ -137,20 +142,32 @@ def unsupervisedDownload(id):
             os.makedirs(dir)
         except Exception,ex:
             pass
+        # print len(os.listdir(dir))
+        if len(os.listdir(dir)) > 5000:
+            min_time += datetime.timedelta(days = 1)
+            max_time += datetime.timedelta(days = 1)
+            continue
         for page in range(1,100):
-            photos = flickr.photos.search(api_key=api_key, extras='url_z', sort = 'interestingness-desc',
-                min_upload_date=date2timestamp(min_time), max_upload_date=date2timestamp(max_time), per_page=100, page=page)
+            while True:
+                try:
+                    photos = flickr.photos.search(api_key=api_key, extras='url_z', sort = 'interestingness-desc',
+                        min_upload_date=date2timestamp(min_time), max_upload_date=date2timestamp(max_time), per_page=100, page=page)
 
-            for ph in photos['photos']['photo']:
-                if ph.get('url_z') == None:
+                    for ph in photos['photos']['photo']:
+                        if ph.get('url_z') == None:
+                            continue
+                        # print os.listdir(dir)
+                        if str(ph.get('id') + '.jpg') in os.listdir(dir):
+                            continue
+                        downLoadPicFromURL(dir + ph.get('id') + '.jpg',ph.get('url_z'))
+                except Exception,ex:
+                    print 'Error in unsupervisedDownload() page loop'
+                    print ex
                     continue
-                # print os.listdir(dir)
-                if str(ph.get('id') + '.jpg') in os.listdir(dir):
-                    continue
-                downLoadPicFromURL(dir + ph.get('id') + '.jpg',ph.get('url_z'))
+                break
 
-        min_time += timedelta(days = 1)
-        max_time += timedelta(days = 1)
+        min_time += datetime.timedelta(days = 1)
+        max_time += datetime.timedelta(days = 1)
                    
 class MyThread(threading.Thread):
     def __init__(self,flag,arg,id):
@@ -164,16 +181,17 @@ class MyThread(threading.Thread):
             crawl(self.arg,self.getName())
         else:
         # unsupervised
-            unsupervisedDownload(self.id)
+            while True:
+                unsupervisedDownload(self.id)
 
 def main():
-    
-    readInInitSet()
+
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
     thread_list = []
     if sys.argv[1] == '-s':
+        readInInitSet()
         flag = True
     else:
         if sys.argv[1] == '-u':
