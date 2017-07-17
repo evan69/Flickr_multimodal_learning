@@ -63,8 +63,56 @@ def supMerge():
             print 'error in sup merge'
             print ex
             
+def mergePart(fileName):
+    cnt = 0
+    smallSet = dict()
+    fin = open(fileName,'r')
+    i = 0
+    lines = fin.readlines()
+    for line in lines:
+        sp = line.split(' ')
+        info = sp[0] + sp[1] + sp[2]
+        smallSet[info] = i
+        #print info,i
+        i += 1
+        cnt += 1
+        if cnt % 1000 == 0:
+            print cnt
+    fin.close()
+    
+    keys_set = smallSet.keys()
+    assert len(lines) == len(keys_set)
+    out = [' '] * len(lines)
+    text_fin = open('text_modal_data.txt','r')
+    lines = text_fin.readlines()
+    for line in lines:
+        sp = line.split(' ')
+        info = sp[0] + sp[1] + sp[2]
+        if info in keys_set:
+            out[smallSet[info]] = line
+        cnt += 1
+        if cnt % 1000 == 0:
+            print cnt
+    
+    result = open('text_modal_data_part_2.txt','w')
+    for line in out:
+        if line == ' ':
+           result.write('#\n')
+           continue
+        cnt += 1
+        if cnt % 1000 == 0:
+            print cnt
+        result.write(line)
+    result.close()
+
+    # assert ' ' not in out
+    
 if __name__ == '__main__':
-    fout = open('text_modal_data.txt','w')
-    supMerge()
-    unsMerge()
-    fout.close()
+    if sys.argv[1] == '-a':
+        fout = open('text_modal_data.txt','w')
+        supMerge()
+        unsMerge()
+        fout.close()
+    else:
+        mergePart(sys.argv[1])
+    
