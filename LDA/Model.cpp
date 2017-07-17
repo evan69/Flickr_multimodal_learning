@@ -1,0 +1,383 @@
+#include "Model.h"
+
+#include <algorithm>
+#include <sstream>
+#include <fstream>
+#include <cstdio>
+#include <cstring>
+#include <string>
+#include <vector>
+#include <set>
+#include <map>
+#include <complex>
+#include <utility>
+#include <fstream>
+#include <iostream>
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <cmath>
+
+using namespace std;
+
+Model::Model(int topicNum, Corpus* corpus) {
+    this -> corpus = corpus;
+    D = corpus -> docNum;
+    W = corpus -> wordNum;
+    K = topicNum;
+    gamma = new double*[D]; //文本的topic分布参数 
+
+    for (int d = 0; d < D; d ++) {
+        gamma[d] = new double[K];
+    }
+    LABEL_WEIGHT = 1;
+    tau = 0.01;  //原始lda的两个超参数在这里是tau和gama 
+    BETA_SELF = 1;
+    BETA_FIG = 1;
+    outputLimit = 10000000;
+}
+
+
+
+//传入参数为 文档号、词编号
+//返回新的z 
+int Model::SampleTopic(int d, int w) {
+	//K为topic数目 
+
+    double KGamma = 0.0;
+    
+	for (int k = 0; k < K; k ++) { //对应paper中的gamma 
+        KGamma += gamma[d][k];
+ 	} 
+
+    
+	double WTau = W * tau; //对应paper中的yita 
+    
+	double* p = new double[K];
+	
+   
+    for (int k = 0; k < K; k ++) {
+        p[k] = (ndz[d][k] + gamma[d][k]) / (nd_z[d] + KGamma); //这两个公式是Gibbs采样的概率 
+        p[k] *= (nzw[k][w] + tau) / (nz_w[k] + WTau);
+    }
+    
+    // cumulate multinomial parameters
+    for (int k = 1; k < K; k++) { //所有概率累加 
+	    p[k] += p[k - 1];
+    } 
+    
+    // scaled sample because of unnormalized p[] soga！因为没有归一化，所以p[2*K-1]不等于1 
+    double u = ((double) rand() / RAND_MAX) * p[K - 1];
+	
+	//有点巧妙啊！ 
+    int topic = 0;
+    for (topic = 0; topic < K - 1; topic++) { 
+	    if (p[topic] > u) { 
+	        break;
+     	} 
+    }
+	  
+    //printf("%.3lf %.3lf %d\n", p[K - 1], u, topic);
+    delete[] p;
+    return topic;
+}
+
+//int         Model::Train(int maxIter, int BURN_IN, int SAMPLE_LAG, int ALPHA, int GAMMA)
+int Model::Train(int maxIter, int BURN_IN, int SAMPLE_LAG) { //学长代码原来是上面的一行 
+    printf("Start learning!\n");
+    printf("Initialize the parameters! \n");
+	
+	//超参数设置 
+
+    for (int d = 0; d < D; d ++) {
+        Document* doc = corpus -> docs[d];
+        for (int k = 0; k < K; k ++) {
+        	gamma[d][k] = 50.0 / double(K);
+        }
+        
+
+    }
+    
+    
+    InitEstimation(); //一般参数初始化 
+    
+	//迭代训练部分 
+    int sample_cnt = 0;
+    for (int iter = 0; iter < maxIter; iter ++) {
+        printf("[Iteration %d]...\n", iter + 1);
+        
+        //文本训练部分 
+		for (int d = 0; d < D; d ++) {
+            Document* doc = corpus -> docs[d];
+ 
+            for (unsigned int i = 0; i < doc -> words.size(); i ++) {
+                int w = doc -> words[i];
+                int old_z = Z[d][i]; //该词原来的topic 
+               
+                //以下为各种回退 
+				nzw[old_z][w] --; //属于topic old_z的词中词w的数目减一 
+                nz_w[old_z] --; //属于old_z的词的数目减一 
+            
+            	ndz[d][old_z] --;
+             	nd_z[d] --;
+               
+                //回退结束，重新采样 
+                //Gibbs采样生成新的topic和c 
+                
+                //传入参数为 文档号、词编号、音频编号 
+                int z = SampleTopic(d, w);
+                
+				//printf("%d : %d %d\n", d, c, z);
+                //更新参数 
+             
+                Z[d][i] = z;
+                nzw[z][w] ++;
+                nz_w[z] ++;
+                
+                ndz[d][z] ++;
+                nd_z[d] ++;
+           
+            }
+        }
+        
+      
+    
+
+        if (iter < BURN_IN) { //头20轮迭代不更新参数 
+        	continue;
+        }
+        if ((iter - BURN_IN) % SAMPLE_LAG != 0) { //之后每10轮迭代更新一次参数 
+        	continue;
+        }
+        sample_cnt ++;
+        // update parameters
+        //文本部分参数更新 
+        for (int d = 0; d < D && d<outputLimit; d ++) { //该for对应sita的更新 
+       
+            double sum = 0.0;
+            for (int k = 0; k < K; k ++) {
+                pzd[k][d] = ndz[d][k] + gamma[d][k];
+                sum += pzd[k][d];
+            }
+            for (int k = 0; k < K; k ++) {
+                if (sum > 0) {
+                	pzd[k][d] /= sum;
+                } else {
+                    pzd[k][d] = 1.0 / K;
+                }
+                s_pzd[k][d] += pzd[k][d];
+            }
+        }
+   
+        //依然是文本参数更新 
+        for (int k = 0; k < K; k ++) {//该for对应fai的更新 
+            double sum = 0.0;
+            for (int w = 0; w < W; w ++) {
+                pwz[w][k] = nzw[k][w] + tau;
+                sum += pwz[w][k];
+            }
+            for (int w = 0; w < W; w ++) {
+                if (sum > 0) {
+                    pwz[w][k] /= sum;
+                } else {
+                    pwz[w][k] = 1.0 / W;
+                }
+                s_pwz[w][k] += pwz[w][k];
+            }
+        }
+
+    }
+    //训练完毕 
+    //pzd之类的，上面计算出的是每一轮迭代的值
+	//训练完毕后，求平均值，即s_XXX是总和，除一下即平均值 
+    for (int d = 0; d < D && d<outputLimit ; d ++) {
+     
+        for (int z = 0; z < K; z ++) {
+            pzd[z][d] = s_pzd[z][d] / (sample_cnt + 0.0);
+        }
+    }
+    
+
+    
+    for (int z = 0; z < K; z ++) {
+        for (int w = 0; w < W; w ++) {
+            pwz[w][z] = s_pwz[w][z] / (sample_cnt + 0.0);
+            if (pwz[w][z] > 1) { 
+                printf("%.5lf %d %d\n", pwz[w][z], w, z);
+            }
+        }
+    }
+    return 0;
+}
+
+//生成0到1之间的随机小数 
+double	Random() {
+	return 1.0 * rand() / RAND_MAX;
+}
+
+int Model::InitEstimation()
+{ //参数初始化
+
+    s_pzd = new double*[K];
+
+    s_pwz = new double*[W];
+
+    
+
+    pzd = new double*[K];
+    pwz = new double*[W];
+
+    
+	nzw = new int*[K];
+    ndz = new int*[D];
+    nd_z = new int[D];
+    nzw = new int*[K];
+    nz_w = new int[K];
+    
+	Z = new int*[D];
+
+
+
+    for (int d = 0; d < D; d ++)
+    {
+        ndz[d] = new int[K];
+    } 
+    for (int k = 0; k < K; k ++)
+    {
+    
+        pzd[k] = new double[D];
+      
+        s_pzd[k] = new double[D];
+   
+        for (int d = 0; d < D; d ++)
+        {
+            s_pzd[k][d] = 0.0;
+        } 
+        nzw[k] = new int[W];
+    }
+    for (int w = 0; w < W; w ++)
+    {
+        pwz[w] = new double[K];
+        s_pwz[w] = new double[K];
+        for (int k = 0; k < K; k ++)
+        {
+            s_pwz[w][k] = 0.0;
+        } 
+    }
+    for (int d = 0; d < D; d ++)
+    {
+        Z[d] = new int[corpus -> docs[d] -> words.size()];
+    }
+    
+    srand(745623); // initialize for random number generation
+    for (int d = 0; d < D; d ++)
+    {
+        nd_z[d] = 0;
+        for (int k = 0; k < K; k ++)
+        {
+            ndz[d][k] = 0;
+        } 
+    }
+
+    
+
+    
+    for (int k = 0; k < K; k ++) {
+        nz_w[k] = 0;
+        for (int w = 0; w < W; w ++) { 
+            nzw[k][w] = 0;
+        } 
+    }
+    //上面各种全零初始化结束 
+    
+    //文本初始化部分 
+    for (int d = 0; d < D; d ++) {
+    	
+        Document* doc = corpus -> docs[d];
+        //对每一个词 
+        for (unsigned int i = 0; i < doc -> words.size(); i ++) {
+            int w = doc -> words[i];
+            
+			int k = (int) (Random() * K); //随机取一个topic 
+            if (k == K) { 
+                k --;
+            } 
+
+            Z[d][i] = k; //表示wdi的topic 
+            
+			ndz[d][k] ++;  //文档d中topic k 出现次数 
+   			nd_z[d] ++; // 文档d中与情感相关的词的数目
+        
+            nzw[k][w] ++; //属于topic k的词中词w的数目 
+            nz_w[k] ++; //属于topic k的词的数目 
+
+        }
+    }
+    return 0;
+}
+
+
+//下面为存储各种参数分布 
+int         Model::SaveTopic(const char* fileDir, int top)
+{
+    printf("Saving topics to %s...\n", fileDir);
+    bool done[W];
+    FILE* fout = fopen(fileDir, "w");
+    int hit[K][top];
+    memset(hit, 0, sizeof(hit));
+    for (int k = 0; k < K; k ++)
+    {
+        fprintf(fout, "Topic #%d:\n", k);
+        memset(done, false, sizeof(done));
+        for (int t = 0; t < top; t ++)
+        {
+            double max = 0;
+            int wid;
+            for (int w = 0; w < W; w ++)
+            {
+                if (pwz[w][k] > max && (! done[w]))
+                {
+                    max = pwz[w][k];
+                    wid = w;
+                }
+            }
+            done[wid] = true;
+            //printf("%.5lf\n", max);
+            fprintf(fout, "%s %.5lf\n", corpus -> terms[wid].c_str(), max);
+        }
+        fprintf(fout, "\n");
+    }
+    fclose(fout);
+
+    return 0;
+}
+
+
+
+
+
+int         Model::SavePzd(const char* fileDir)
+{
+    printf("Save topic distribution to %s.\n", fileDir);
+    FILE* fout = fopen(fileDir, "w");
+    for (int d = 0; d < D && d<outputLimit; d ++)
+    {
+        Document* doc = corpus -> docs[d];
+        /*for (unsigned int i = 0; i < doc -> words.size(); i ++)
+        {
+            fprintf(fout, "%s ", corpus -> terms[doc -> words[i]].c_str());
+        }
+        fprintf(fout, "\n");*/
+        fprintf(fout, "%c ", doc->type);
+        fprintf(fout, "%s ", doc->dir.c_str());
+		fprintf(fout, "%s ", doc->pic_id.c_str());
+        for (int k = 0; k < K; k ++)
+        {
+            fprintf(fout, "%.5lf ", pzd[k][d]);
+        }
+        fprintf(fout, "\n");
+    }
+    fclose(fout);
+    return 0;
+}
