@@ -92,7 +92,7 @@ int   main(int argc, char* argv[])
     Model* model = new Model(TOPIC_NUM,dataSet -> corpus);
     model -> K = TOPIC_NUM;
     model -> Train(MAX_ITER, BURN_IN, SAMPLE_LAG);
-    PZD_FILE = "pzd.txt";
+    PZD_FILE = "text_modal.txt";
     //¥¢¥Êƒ£–Õ
     TOPIC_FILE = "topic.txt";
     model -> SaveTopic(TOPIC_FILE.c_str(), 50);

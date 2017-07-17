@@ -19,7 +19,9 @@ def writeMat():
     all_data = [float(item) for item in all_data]
     all_data = np.array(all_data).reshape(num_of_lines,demen_of_lines)
     print all_data
-    scipy.io.savemat('D:/learn/grade3-3/multimodal_dictionary_learning/image_modal.mat', mdict={'image_modal': all_data})
+    name = sys.argv[2].split('/')[-1].split('.')[0]
+    print name
+    scipy.io.savemat('D:/' + name + '.mat', mdict={name: all_data})
     
 def readMat():
     fin = open(sys.argv[2],'w')

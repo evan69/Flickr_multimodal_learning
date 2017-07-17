@@ -94,7 +94,7 @@ def mergePart(fileName):
         if cnt % 1000 == 0:
             print cnt
     
-    result = open('text_modal_data_part_2.txt','w')
+    result = open('text_modal_data_part_2_merge.txt','w')
     for line in out:
         if line == ' ':
            result.write('#\n')
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     if sys.argv[1] == '-a':
         fout = open('text_modal_data.txt','w')
         supMerge()
-        unsMerge()
+        # unsMerge()
         fout.close()
     else:
         mergePart(sys.argv[1])
