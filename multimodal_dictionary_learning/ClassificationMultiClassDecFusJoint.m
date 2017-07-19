@@ -63,13 +63,21 @@ computeCostQuad = 0; % flag to compute (1) or not compute (0) the classification
 % ttls = vector of test data lables 
     
 % load sampleMultimodalData % comment and load your own multimodal data as commented above!
-load text_modal
-load image_modal
+train = true;
+if train
+    load text_modal_train
+    load image_modal_train
+else
+    load text_modal_test
+    load image_modal_test
+    text_modal_train = text_modal_test;
+    image_modal_train = image_modal_test;
+end
 % text_modal = text_modal(:,);
 % image_modal = text_modal(:,1:45);
-XArr = [image_modal';text_modal'];
-t_len = size(text_modal);
-i_len = size(image_modal);
+XArr = [image_modal_train';text_modal_train'];
+t_len = size(text_modal_train);
+i_len = size(image_modal_train);
 N = t_len(1);
 S = 2;
 n = [i_len(2);t_len(2)];
@@ -83,7 +91,6 @@ L = zeros(d*S, d);
 U = zeros(d*S, d);
 
 % unsupervised dictionary learning
-train = false;
 if train
     disp('start train')
     DUnsup = OnlineUnsupTaskDrivDicLeaJointC(XArr, trls, n, d, opts);
@@ -107,9 +114,11 @@ for j = 1: N  % find A for each data separetely
 end
 
 Atr = Atr';
-save after_DL Atr
 if train
     save Dict
+    save DL_result_train Atr
+else
+    save DL_result_test Atr
 end
 
 if false

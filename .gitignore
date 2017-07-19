@@ -103,13 +103,28 @@ ENV/
 tags.txt
 filtered_tags.txt
 pic_tag_cnt_new.txt
-text_modal_data.txt
-text_modal_data_part_2.txt
 img_data.txt
-image_modal.txt
-text_modal.txt
+
+# 文本形式的文本模态数据
+text_modal_raw_train.txt
+text_modal_raw_test.txt
+
+# 经过LDA处理后的向量形式的文本模态数据
+text_modal_train.txt
+text_modal_test.txt
+
+# 向量形式的图像模态数据
+image_modal_train.txt
+image_modal_test.txt
+
 *.rar
 *.mat
-DL_image_result.txt
-DL_text_result.txt
+
+# 经过字典学习之后的向量数据
+DL_text_result_train.txt
+DL_text_result_test.txt
+DL_image_result_train.txt
+DL_image_result_test.txt
+
 /LDA/topic.txt
+/DL_res1/

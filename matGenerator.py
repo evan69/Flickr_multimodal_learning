@@ -24,12 +24,17 @@ def writeMat():
     scipy.io.savemat(os.getcwd() + '/multimodal_dictionary_learning/' + name + '.mat', mdict={name: all_data})
     
 def readMat():
-    data = scipy.io.loadmat(os.getcwd() + '/after_DL.mat')
+    if sys.argv[2] == 'train' or sys.argv[2] == 'test':
+        type = sys.argv[2]
+    else:
+        print 'error in parameters: if should be "-r test/train"'
+        return
+    data = scipy.io.loadmat(os.getcwd() + '/multimodal_dictionary_learning/DL_result_' + type + '.mat')
     print data['Atr']
     demen = len(data['Atr'][0])
-    fin = open('image_modal.txt','r')
-    fout1 = open('DL_image_result.txt','w')
-    fout2 = open('DL_text_result.txt','w')
+    fin = open('image_modal_train.txt','r')
+    fout1 = open('DL_image_result_' + type + '.txt','w')
+    fout2 = open('DL_text_result_' + type + '.txt','w')
     lines = fin.readlines()
     for i in range(len(lines)):
         line = lines[i]
