@@ -374,7 +374,11 @@ int         Model::SavePzd(const char* fileDir)
 		fprintf(fout, "%s ", doc->pic_id.c_str());
         for (int k = 0; k < K; k ++)
         {
-            fprintf(fout, "%.5lf ", pzd[k][d]);
+            fprintf(fout, "%.5lf", pzd[k][d]);
+            if(k != K-1)
+            {
+                fprintf(fout, " ");
+            }
         }
         fprintf(fout, "\n");
     }

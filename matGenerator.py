@@ -9,7 +9,7 @@ def writeMat():
     all_data = []
     lines = fin.readlines()
     num_of_lines = 0
-    demen_of_lines = len(lines[0].split(' ')) - 4
+    demen_of_lines = len(lines[0].split(' ')) - 3
     print 'demen_of_lines',demen_of_lines
     for line in lines:
         res = line.split(' ')
@@ -21,7 +21,7 @@ def writeMat():
     print all_data
     name = sys.argv[2].split('/')[-1].split('.')[0]
     print name
-    scipy.io.savemat(os.getcwd() + '/' + name + '.mat', mdict={name: all_data})
+    scipy.io.savemat(os.getcwd() + '/multimodal_dictionary_learning/' + name + '.mat', mdict={name: all_data})
     
 def readMat():
     data = scipy.io.loadmat(os.getcwd() + '/after_DL.mat')
