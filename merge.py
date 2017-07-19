@@ -63,28 +63,62 @@ def supMerge():
             print 'error in sup merge'
             print ex
             
-def mergePart(fileName):
+def mergePart():
     cnt = 0
-    smallSet = dict()
-    fin = open(fileName,'r')
-    i = 0
+    
+    si = set()
+    fin = open('image_modal_data.txt','r')
     lines = fin.readlines()
     for line in lines:
         sp = line.split(' ')
         info = sp[0] + sp[1] + sp[2]
-        smallSet[info] = i
-        #print info,i
-        i += 1
+        si.add(info)
         cnt += 1
         if cnt % 1000 == 0:
             print cnt
     fin.close()
     
+    st = set()
+    fin = open('text_modal_data.txt','r')
+    lines = fin.readlines()
+    for line in lines:
+        sp = line.split(' ')
+        info = sp[0] + sp[1] + sp[2]
+        st.add(info)    
+        cnt += 1
+        if cnt % 1000 == 0:
+            print cnt
+    fin.close()
+    
+    final_set = si & st
+    
+    smallSet = dict()
+    fin = open('image_modal_data.txt','r')
+    fout = open('image_modal_train.txt','w')
+    i = 0
+    lines = fin.readlines()
+    for line in lines:
+        sp = line.split(' ')
+        info = sp[0] + sp[1] + sp[2]
+        if info not in final_set:
+            continue
+        smallSet[info] = i
+        fout.write(line)
+        i += 1
+        cnt += 1
+        if cnt % 1000 == 0:
+            print cnt
+    fin.close()
+    fout.close()
+    
     keys_set = smallSet.keys()
-    assert len(lines) == len(keys_set)
-    out = [' '] * len(lines)
-    text_fin = open('text_modal_data.txt','r')
-    lines = text_fin.readlines()
+    assert len(final_set) == len(keys_set)
+    assert i == len(final_set)
+    
+    out = ['#'] * len(final_set)
+    
+    fin = open('text_modal_data.txt','r')
+    lines = fin.readlines()
     for line in lines:
         sp = line.split(' ')
         info = sp[0] + sp[1] + sp[2]
@@ -93,19 +127,12 @@ def mergePart(fileName):
         cnt += 1
         if cnt % 1000 == 0:
             print cnt
+    fin.close()
     
-    result = open('text_modal_data_part_2_merge.txt','w')
+    fout = open('text_modal_train.txt','w')
     for line in out:
-        if line == ' ':
-           result.write('#\n')
-           continue
-        cnt += 1
-        if cnt % 1000 == 0:
-            print cnt
-        result.write(line)
-    result.close()
-
-    # assert ' ' not in out
+        fout.write(line)
+    fout.close()
     
 if __name__ == '__main__':
     if sys.argv[1] == '-a':
@@ -114,5 +141,5 @@ if __name__ == '__main__':
         # unsMerge()
         fout.close()
     else:
-        mergePart(sys.argv[1])
+        mergePart()
     

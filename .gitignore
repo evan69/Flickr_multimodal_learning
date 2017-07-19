@@ -105,6 +105,10 @@ filtered_tags.txt
 pic_tag_cnt_new.txt
 img_data.txt
 
+# 原始的未经过求交的数据
+text_modal_data.txt
+image_modal_data.txt
+
 # 文本形式的文本模态数据
 text_modal_raw_train.txt
 text_modal_raw_test.txt
@@ -128,3 +132,4 @@ DL_image_result_test.txt
 
 /LDA/topic.txt
 /DL_res1/
+DL_test.py
