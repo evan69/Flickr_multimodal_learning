@@ -1,0 +1,13 @@
+S ：模态数
+n ：各个模态下的向量维数
+N ：训练集数量
+XArr ：训练集数据，sigma[n(s)]×N维矩阵
+YArr ：测试集数据，格式同XArr
+trls ：训练集标签，1×N维
+ttls ：测试集标签，格式同trls
+d：每个样本的每个模态的稀疏表示维数
+OnlineUnsupTaskDrivDicLeaJointC：非监督学习计算字典D
+JointADMMEigenMex函数：计算稀疏表示
+DSup ：字典，维数为sigma[n(s)]×d
+
+train ：是否是训练模式，true/false
