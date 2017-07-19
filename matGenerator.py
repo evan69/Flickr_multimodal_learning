@@ -2,7 +2,7 @@
 # evan69
 import numpy as np
 import scipy.io
-import sys
+import sys,os
 
 def writeMat():
     fin = open(sys.argv[2],'r')
@@ -21,16 +21,31 @@ def writeMat():
     print all_data
     name = sys.argv[2].split('/')[-1].split('.')[0]
     print name
-    scipy.io.savemat('D:/' + name + '.mat', mdict={name: all_data})
+    scipy.io.savemat(os.getcwd() + '/' + name + '.mat', mdict={name: all_data})
     
 def readMat():
-    fin = open(sys.argv[2],'w')
+    data = scipy.io.loadmat(os.getcwd() + '/after_DL.mat')
+    print data['Atr']
+    demen = len(data['Atr'][0])
+    fin = open('image_modal.txt','r')
+    fout1 = open('DL_image_result.txt','w')
+    fout2 = open('DL_text_result.txt','w')
     lines = fin.readlines()
-    for line in readlines:
-        pass
-    modal_data = np.array([123123, 1.2, 2.3, 3.4])
-    scipy.io.savemat('d:/out.mat', mdict={'modal_data': modal_data})
-    
+    for i in range(len(lines)):
+        line = lines[i]
+        line = line.split(' ')
+        out = line[0] + ' ' + line[1] + ' ' + line[2]
+        fout1.write(out)
+        fout2.write(out)
+        for j in range(demen / 2):
+            fout1.write(' ')
+            fout1.write(str(data['Atr'][i][j]))
+            fout2.write(' ')
+            fout2.write(str(data['Atr'][i][j + demen / 2]))
+        fout1.write('\n')
+        fout2.write('\n')
+        # fout1.write(out)
+        # for item in data[]
 
 
 if __name__ == '__main__':
