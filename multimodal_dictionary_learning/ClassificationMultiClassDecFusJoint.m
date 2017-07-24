@@ -32,15 +32,15 @@ close all
 opts=[];
 opts.lambda = 0.1; % regularization term for l_{12} norm
 opts.lambda2 = 0; % Frobenius norm regularizer
-opts.iterADMM = 10; % Number of iterations for the ADMM algorithm to solve the joint sparse coding problem
+opts.iterADMM = 800; % Number of iterations for the ADMM algorithm to solve the joint sparse coding problem
 opts.rho = 0.1; % inverse of the step size (lambda) for ADMM algorithm using the notation of the following paper: https://web.stanford.edu/~boyd/papers/pdf/prox_algs.pdf
-opts.iterUnsupDic = 5; % number of iteratios over the training data set for unsupervised dictionary learning
+opts.iterUnsupDic = 120; % number of iteratios over the training data set for unsupervised dictionary learning
 opts.iterSupDic = 10; % number of iteratios over the training data set for supervised dictionary learning
 opts.computeCost = 0; % flag to compute (1) or not compute (0) the cost of the dictionary learning. Use 1 initially to monitor convergence. It makes the code slower when it is 1.
 opts.batchSize = 100; % batch size for unsupervised and supervised dictionary learning
 opts.intercept = 0; % whether to add (1) or not add (1) intercept term to the classifier
 ro = 5; % learning rate of the SGD of dictionary learning (sensitive parameter for convergence)
-d = 4*7; % Number of dictionary atoms. For example, for a problem with 11 number of classes and 4 number of atoms per class, the dictionary size would be 4*11
+d = 28; % Number of dictionary atoms. For example, for a problem with 11 number of classes and 4 number of atoms per class, the dictionary size would be 4*11
 
 %% set parameters for initial classifier training
 nuQuad = 1e-8 % regularize for the classifier
@@ -68,6 +68,8 @@ if train
     load text_modal_train
     load image_modal_train
 else
+    load Dict
+    train = false;
     load text_modal_test
     load image_modal_test
     text_modal_train = text_modal_test;
@@ -96,7 +98,6 @@ if train
     DUnsup = OnlineUnsupTaskDrivDicLeaJointC(XArr, trls, n, d, opts);
 else
     disp('start test')
-    load Dict
 end
 
 temp = 1;
