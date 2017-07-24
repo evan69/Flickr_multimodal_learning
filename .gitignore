@@ -122,6 +122,7 @@ image_modal_train.txt
 image_modal_test.txt
 
 *.rar
+*.zip
 *.mat
 
 # 经过字典学习之后的向量数据

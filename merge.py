@@ -93,8 +93,8 @@ def mergePart():
     final_set = si & st
     
     smallSet = dict()
-    fin = open('image_modal_data.txt','r')
-    fout = open('image_modal_train.txt','w')
+    fin = open('text_modal_data.txt','r')
+    fout = open('text_modal_raw_train.txt','w')
     i = 0
     lines = fin.readlines()
     for line in lines:
@@ -117,7 +117,7 @@ def mergePart():
     
     out = ['#'] * len(final_set)
     
-    fin = open('text_modal_data.txt','r')
+    fin = open('image_modal_data.txt','r')
     lines = fin.readlines()
     for line in lines:
         sp = line.split(' ')
@@ -129,7 +129,7 @@ def mergePart():
             print cnt
     fin.close()
     
-    fout = open('text_modal_train.txt','w')
+    fout = open('image_modal_train.txt','w')
     for line in out:
         fout.write(line)
     fout.close()
